@@ -1,0 +1,66 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+
+import argparse
+import os
+
+import document
+
+class TreeParser(object):
+    """
+    TreeParser traverses a directory, finding all TIFFs and PDFs,
+    joining these where necessary. 
+    """
+    
+    def __init__(self, paths):
+        self.paths = paths
+        path = paths[0]
+        problempaths = []
+        for root, dirs, files in os.walk(path):
+            subjectparts = os.path.basename(os.path.abspath(root)).split("_")
+            abbreviation = subjectparts[1] if len(subjectparts) == 2 else None
+            subject = subjectparts[0]
+#            print "{root}: {subject} ({abbr})".format(root=root, subject=subject, abbr=abbreviation)
+            documents = []
+            for f in files:
+                try:
+                    #print "processing "+f
+                    basename = os.path.basename(f)
+                    docname, ext = os.path.splitext(basename)
+                    ext = ext[1:].lower()
+                    if not (ext in document.pdf_extensions or ext in document.tiff_extensions):
+                        continue
+                    doc = document.Document()
+                    doc.add(os.path.join(root, f))
+                    documents.append(doc)
+                    #print "added " + str(doc._attributes)
+                except Exception as e:
+                    problempaths.append((os.path.join(root,f),repr(e)))
+            documents = set(documents)
+            bewertungen_docs = set(filter(lambda d: d.get_type() == "b", documents))
+            fragen_docs =  set(filter(lambda d: d.get_type() == "f", documents))
+            for bew in bewertungen_docs:
+                for fragen in fragen_docs:
+                    if bew.mergable(fragen):
+                        fragen_docs.pop(fragen)
+                        documents.pop(fragen)
+                        bew += fragen
+                        print "brütal mergage!"+ str(bew._attributes) + str(fragen._attributes)
+                        break
+        print "PROBLEMS:", problempaths
+
+def _main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("PATHS", nargs="+", type=FolderType())
+    args = parser.parse_args()
+    tp = TreeParser(args.PATHS)
+
+class FolderType(object):
+    def __call__(self, string):
+        if os.path.isdir(string):
+            return string
+        else:
+            raise argparse.ArgumentTypeError('"{:s}" is not a directory'.format(string))
+
+if __name__ == "__main__":
+  _main()
