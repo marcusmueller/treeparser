@@ -51,7 +51,7 @@ class Document(object):
     def total_pages(self):
         return sum([n for n, _ in self._paths])
 
-    def mergable(self, name):
+    def mergeable(self, name):
         try:
             pre_type = self._attributes["type"]
             fdict = FilenameParser(name)

@@ -39,9 +39,10 @@ class TreeParser(object):
             documents = set(documents)
             bewertungen_docs = set(filter(lambda d: d.get_type() == "b", documents))
             fragen_docs =  set(filter(lambda d: d.get_type() == "f", documents))
+            print subject, ":", len(bewertungen_docs) , "Bewertungen und ", len(fragen_docs), "Fragen."
             for bew in bewertungen_docs:
                 for fragen in fragen_docs:
-                    if bew.mergable(fragen):
+                    if bew.mergeable(fragen):
                         fragen_docs.pop(fragen)
                         documents.pop(fragen)
                         bew += fragen
